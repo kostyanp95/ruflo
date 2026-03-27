@@ -451,9 +451,14 @@ const spawnCommand = {
         {
             name: 'count',
             short: 'n',
-            description: 'Number of workers to spawn',
+            description: 'Number of workers to spawn (also: --workers)',
             type: 'number',
             default: 1
+        },
+        {
+            name: 'workers',
+            description: 'Alias for --count/-n',
+            type: 'number'
         },
         {
             name: 'role',
@@ -523,8 +528,8 @@ const spawnCommand = {
         { command: 'claude-flow hive-mind spawn -n 5 --claude -o "Research AI patterns"', description: 'Spawn workers and launch Claude Code' }
     ],
     action: async (ctx) => {
-        // Parse count with fallback to default
-        const count = ctx.flags.count || 1;
+        // Parse count with fallback to --workers alias, then default
+        const count = ctx.flags.count || ctx.flags.workers || 1;
         const role = ctx.flags.role || 'worker';
         const agentType = ctx.flags.type || 'worker';
         const prefix = ctx.flags.prefix || 'hive-worker';
