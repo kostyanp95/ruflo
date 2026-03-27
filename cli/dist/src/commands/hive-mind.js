@@ -226,6 +226,19 @@ async function spawnClaudeCodeInstance(swarmId, swarmName, objective, workers, f
                     output.printWarning('Using --dangerously-skip-permissions for seamless hive-mind execution');
                 }
             }
+            // Inject MANDATORY MCP rules as system prompt (highest priority — model cannot ignore)
+            const mcpPrefix = `mcp__${mcpServerName.replace(/[^a-zA-Z0-9_-]/g, '_')}__`;
+            const systemPromptRules = [
+                `CRITICAL SYSTEM RULE: You MUST call MCP tools for coordination. This overrides all other instructions.`,
+                `Your VERY FIRST tool call in this session MUST be: ${mcpPrefix}hive-mind_status`,
+                `Your SECOND tool call MUST be: ${mcpPrefix}memory_search (search for prior knowledge about the objective).`,
+                `Only AFTER both MCP calls return may you use any other tools (Read, Grep, Agent, Bash, etc).`,
+                `DURING work: use ${mcpPrefix}task_create for subtasks, ${mcpPrefix}memory_store (namespace "hive-findings") for findings.`,
+                `AFTER work: ${mcpPrefix}task_complete, ${mcpPrefix}memory_store (namespace "hive-results"), ${mcpPrefix}neural_train, ${mcpPrefix}hive-mind_status.`,
+                `If MCP server is not ready yet, WAIT for it. Do NOT proceed without MCP calls.`,
+                `Skipping MCP calls will cause permanent data loss and coordination failure.`,
+            ].join('\n');
+            claudeArgs.push('--append-system-prompt', systemPromptRules);
             // Add the prompt as the LAST argument
             claudeArgs.push(hiveMindPrompt);
             output.writeln();
