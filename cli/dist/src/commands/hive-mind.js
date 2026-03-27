@@ -586,12 +586,21 @@ const spawnCommand = {
                     output.printWarning('No objective provided. Using default objective.');
                     objective = 'Coordinate the hive mind workers to complete tasks efficiently.';
                 }
-                // Get hive status for swarm info
+                // Get hive status for swarm info — read topology & consensus from initialized hive
                 let swarmId = result.hiveId || 'default';
                 let swarmName = 'Hive Mind Swarm';
                 try {
                     const statusResult = await callMCPTool('hive-mind_status', { includeWorkers: false });
                     swarmId = statusResult.hiveId || swarmId;
+                    if (statusResult.name)
+                        swarmName = statusResult.name;
+                    // Use hive's topology/consensus unless explicitly overridden via CLI flags
+                    if (statusResult.topology && !ctx.flags.topology) {
+                        ctx.flags.topology = statusResult.topology;
+                    }
+                    if (statusResult.consensus && !ctx.flags.consensus) {
+                        ctx.flags.consensus = statusResult.consensus;
+                    }
                 }
                 catch {
                     // Use defaults if status call fails
