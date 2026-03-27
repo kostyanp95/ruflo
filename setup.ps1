@@ -17,14 +17,18 @@ Write-Host "  Node.js: $nodeVersion" -ForegroundColor Green
 $npmVersion = (npm --version 2>$null)
 Write-Host "  npm: $npmVersion" -ForegroundColor Green
 
-# 2. Install CLI dependencies (optional — for MCP server, neural, etc.)
+# 2. Install CLI dependencies (skip if node_modules already present — offline mode)
 Write-Host "`n[2/4] Installing CLI dependencies..." -ForegroundColor Yellow
-Push-Location "$PSScriptRoot\cli"
-npm install --omit=dev --ignore-scripts 2>$null
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "  Warning: some optional deps failed (this is OK)" -ForegroundColor DarkYellow
+if (Test-Path "$PSScriptRoot\cli\node_modules") {
+    Write-Host "  node_modules found — skipping install (offline mode)" -ForegroundColor Green
+} else {
+    Push-Location "$PSScriptRoot\cli"
+    npm install --omit=dev --omit=optional --ignore-scripts --legacy-peer-deps 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  Warning: some deps failed — MCP may not work fully" -ForegroundColor DarkYellow
+    }
+    Pop-Location
 }
-Pop-Location
 
 # 3. Link ruflo globally
 Write-Host "`n[3/4] Linking ruflo globally..." -ForegroundColor Yellow

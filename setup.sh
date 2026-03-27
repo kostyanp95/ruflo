@@ -20,11 +20,15 @@ fi
 echo "  Node.js: $NODE_V"
 echo "  npm: $(npm --version)"
 
-# 2. Install CLI dependencies
+# 2. Install CLI dependencies (skip if node_modules already present — offline mode)
 echo ""
 echo "[2/4] Installing CLI dependencies..."
-cd "$SCRIPT_DIR/cli"
-npm install --omit=dev --ignore-scripts 2>/dev/null || echo "  Warning: some optional deps failed (OK)"
+if [ -d "$SCRIPT_DIR/cli/node_modules" ]; then
+    echo "  node_modules found — skipping install (offline mode)"
+else
+    cd "$SCRIPT_DIR/cli"
+    npm install --omit=dev --omit=optional --ignore-scripts --legacy-peer-deps 2>/dev/null || echo "  Warning: some deps failed"
+fi
 
 # 3. Link ruflo globally
 echo ""

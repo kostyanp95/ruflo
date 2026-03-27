@@ -31,23 +31,26 @@ chmod +x setup.sh
 ./setup.sh
 ```
 
-### Without internet (offline transfer)
+### Without internet (offline transfer, ~8 MB archive)
 
 **On source machine:**
 ```bash
 cd ruflo
-# Create offline bundle with all dependencies
-npm install --prefix cli --omit=dev --ignore-scripts
+# Install minimal deps (38 MB, no optional heavy packages)
+cd cli && npm install --omit=dev --omit=optional --ignore-scripts --legacy-peer-deps && cd ..
+# Create offline bundle with node_modules included
 tar -czf ruflo-offline.tar.gz --exclude='.git' .
-# Copy ruflo-offline.tar.gz to USB drive
+# Copy ruflo-offline.tar.gz to USB drive (~8 MB)
 ```
 
-**On target machine:**
+**On target machine (only Node.js 20+ required):**
 ```bash
 mkdir -p ~/ruflo
 tar xzf ruflo-offline.tar.gz -C ~/ruflo
 cd ~/ruflo
 npm link
+# Done! node_modules already inside, no internet needed
+ruflo --version
 ```
 
 ### Manual setup (any OS)
