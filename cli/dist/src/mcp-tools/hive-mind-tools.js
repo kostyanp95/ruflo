@@ -107,6 +107,7 @@ function loadHiveState() {
     return {
         initialized: false,
         topology: 'mesh',
+        consensusAlgorithm: 'byzantine',
         workers: [],
         consensus: { pending: [], history: [] },
         sharedMemory: {},
@@ -215,6 +216,7 @@ export const hiveMindTools = [
             const queenId = input.queenId || `queen-${Date.now()}`;
             state.initialized = true;
             state.topology = input.topology || 'mesh';
+            state.consensusAlgorithm = input.consensus || 'byzantine';
             state.createdAt = new Date().toISOString();
             state.queen = {
                 agentId: queenId,
@@ -226,12 +228,12 @@ export const hiveMindTools = [
                 success: true,
                 hiveId,
                 topology: state.topology,
-                consensus: input.consensus || 'byzantine',
+                consensus: state.consensusAlgorithm,
                 queenId,
                 status: 'initialized',
                 config: {
                     topology: state.topology,
-                    consensus: input.consensus || 'byzantine',
+                    consensus: state.consensusAlgorithm,
                     maxAgents: input.maxAgents || 15,
                     persist: input.persist !== false,
                     memoryBackend: input.memoryBackend || 'hybrid',
@@ -281,7 +283,7 @@ export const hiveMindTools = [
                 hiveId: `hive-${state.createdAt ? new Date(state.createdAt).getTime() : Date.now()}`,
                 status: state.initialized ? 'active' : 'offline',
                 topology: state.topology,
-                consensus: 'byzantine', // Default consensus type
+                consensus: state.consensusAlgorithm || 'byzantine',
                 queen: state.queen ? {
                     id: state.queen.agentId,
                     agentId: state.queen.agentId,
