@@ -1616,15 +1616,41 @@ npx ruflo@latest hooks worker dispatch --trigger optimize
  */
 async function writeClaudeMd(targetDir, options, result) {
     const claudeMdPath = path.join(targetDir, 'CLAUDE.md');
-    if (fs.existsSync(claudeMdPath) && !options.force) {
-        result.skipped.push('CLAUDE.md');
-        return;
-    }
     // Determine template: explicit option > infer from components > 'standard'
     const inferredTemplate = (!options.components.commands && !options.components.agents) ? 'minimal' : undefined;
-    const content = generateClaudeMd(options, inferredTemplate);
-    fs.writeFileSync(claudeMdPath, content, 'utf-8');
-    result.created.files.push('CLAUDE.md');
+    const newContent = generateClaudeMd(options, inferredTemplate);
+    if (fs.existsSync(claudeMdPath)) {
+        if (options.force) {
+            // --force: overwrite completely
+            fs.writeFileSync(claudeMdPath, newContent, 'utf-8');
+            result.created.files.push('CLAUDE.md');
+        }
+        else {
+            // Merge: prepend new ruflo config, keep existing user content below
+            const existing = fs.readFileSync(claudeMdPath, 'utf-8');
+            // Strip previous ruflo block if present (between markers)
+            const markerStart = '<!-- ruflo:start -->';
+            const markerEnd = '<!-- ruflo:end -->';
+            let userContent = existing;
+            const startIdx = existing.indexOf(markerStart);
+            const endIdx = existing.indexOf(markerEnd);
+            if (startIdx !== -1 && endIdx !== -1) {
+                userContent = existing.substring(0, startIdx).trimEnd()
+                    + '\n' + existing.substring(endIdx + markerEnd.length).trimStart();
+                userContent = userContent.trim();
+            }
+            // Wrap new content in markers and prepend
+            const merged = `${markerStart}\n${newContent}\n${markerEnd}\n\n${userContent}\n`;
+            fs.writeFileSync(claudeMdPath, merged, 'utf-8');
+            result.created.files.push('CLAUDE.md (merged)');
+        }
+    }
+    else {
+        // No existing file — create with markers
+        const wrapped = `<!-- ruflo:start -->\n${newContent}\n<!-- ruflo:end -->\n`;
+        fs.writeFileSync(claudeMdPath, wrapped, 'utf-8');
+        result.created.files.push('CLAUDE.md');
+    }
 }
 /**
  * Find source directory for skills/commands/agents
