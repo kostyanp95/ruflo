@@ -118,7 +118,27 @@ export const agentdbPatternStore = {
                 type: validateString(params.type, 'type', 200) ?? 'general',
                 confidence: validateScore(params.confidence, 0.8),
             });
-            return result ?? { success: false, error: 'AgentDB bridge not available. Use memory_store/memory_search instead.' };
+            if (!result) {
+                // bridgeStorePattern returned null — try direct memory_store fallback
+                try {
+                    const { bridgeStoreEntry } = bridge;
+                    if (bridgeStoreEntry) {
+                        const patternKey = `pattern-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+                        const stored = await bridgeStoreEntry({
+                            key: patternKey,
+                            value: JSON.stringify({ pattern, type: validateString(params.type, 'type', 200) ?? 'general', confidence: validateScore(params.confidence, 0.8) }),
+                            namespace: 'patterns',
+                            generateEmbeddingFlag: true,
+                            tags: [validateString(params.type, 'type', 200) ?? 'general', 'pattern'],
+                        });
+                        if (stored)
+                            return { success: true, patternId: stored.id || patternKey, controller: 'bridge-direct-fallback' };
+                    }
+                }
+                catch { /* fallback failed too */ }
+                return { success: false, error: 'AgentDB pattern-store failed: reasoningBank controller disabled and fallback failed. Use agentdb_hierarchical-store with tier "episodic" instead.' };
+            }
+            return result;
         }
         catch (error) {
             return { success: false, error: sanitizeError(error) };
